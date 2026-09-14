@@ -2,7 +2,9 @@ import { mkdir, copyFile, writeFile, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const output = resolve(root, 'dist');
+// Vercel can be configured with either the repository root or `app` as Root Directory.
+// Always read source files from the repository, while writing output beside the active package.
+const output = resolve(process.cwd(), 'dist');
 await mkdir(resolve(output, 'fonts'), { recursive: true });
 // Only explicitly public browser assets enter the deployment output.
 for (const name of ['app.js', 'ui.css', 'sw.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']) {

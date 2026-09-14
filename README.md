@@ -45,7 +45,7 @@ Android, iPhone, iPad, laptops, and tablets use the responsive web interface. Br
 ## Deploy on Vercel
 
 1. Import **`YumiNoona/clippy`** into Vercel, or use the Deploy button above.
-2. Use the **repository root**, not `app`, as Root Directory. Select **Other** as the framework.
+2. Use the **repository root** as Root Directory and select **Other** as the framework. If your Vercel project is already set to `app`, the compatibility files there also support that layout; redeploy after pulling the fix below.
 3. Connect a writable **Upstash Redis** database, directly or through Vercel Marketplace.
 4. Set the environment variables below for **Production**. Use a separate namespace/database for previews.
 5. Deploy. Open the site, choose **Devices → Create new space**, and copy its invite to another device.
