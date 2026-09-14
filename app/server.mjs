@@ -151,7 +151,7 @@ export function createLoopServer({ dataDir = join(root, 'data') } = {}) {
         return json(res, error instanceof SyntaxError ? 400 : 500, { error:error instanceof SyntaxError ? 'Invalid JSON.' : 'Could not save clipboard data.' });
       }
     }
-    const assets = { '/':'clipsync.html', '/clipsync.html':'clipsync.html', '/app.js':'app.js', '/sw.js':'sw.js', '/manifest.webmanifest':'manifest.webmanifest', '/icon.svg':'icon.svg' };
+    const assets = { '/':'clipsync.html', '/clipsync.html':'clipsync.html', '/app.js':'app.js', '/sw.js':'sw.js', '/manifest.webmanifest':'manifest.webmanifest', '/icon.svg':'icon.svg', '/favicon.ico':'icon.ico' };
     for(const name of ['icon-192.png','icon-512.png','apple-touch-icon.png'])assets['/'+name]=name;
     assets['/ui.css']='ui.css';
     for(const name of ['JetBrainsMono-Regular.ttf','JetBrainsMono-Bold.ttf'])assets['/fonts/'+name]='fonts/'+name;
@@ -160,7 +160,7 @@ export function createLoopServer({ dataDir = join(root, 'data') } = {}) {
     try {
       const content = readFileSync(join(root, asset));
       const ext = asset.split('.').pop();
-      res.writeHead(200, { 'Content-Type':({ html:'text/html; charset=utf-8', js:'text/javascript', webmanifest:'application/manifest+json', svg:'image/svg+xml', png:'image/png', css:'text/css', ttf:'font/ttf' })[ext], 'Cache-Control':'no-cache' });
+      res.writeHead(200, { 'Content-Type':({ html:'text/html; charset=utf-8', js:'text/javascript', webmanifest:'application/manifest+json', svg:'image/svg+xml', png:'image/png', ico:'image/x-icon', css:'text/css', ttf:'font/ttf' })[ext], 'Cache-Control':'no-cache' });
       res.end(req.method === 'HEAD' ? undefined : content);
     } catch { json(res, 404, { error:'Not found' }); }
   });

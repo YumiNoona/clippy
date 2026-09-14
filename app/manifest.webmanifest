@@ -1,6 +1,6 @@
 {
-  "name": "Loop — Universal Clipboard",
-  "short_name": "Loop",
+  "name": "Clippy — Universal Clipboard",
+  "short_name": "Clippy",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

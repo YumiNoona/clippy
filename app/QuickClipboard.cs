@@ -45,7 +45,7 @@ public sealed class LoopQuickWindow : Form {
     root=appRoot;url="http://127.0.0.1:"+port;
     regular=Path.Combine(root,"fonts","JetBrainsMono-Regular.ttf");bold=Path.Combine(root,"fonts","JetBrainsMono-Bold.ttf");
     foreach(string path in new[]{regular,bold}){AddFontResourceEx(path,0x10,IntPtr.Zero);fonts.AddFontFile(path);}
-    Font=new Font(fonts.Families[0],9);Text="Loop - Quick clipboard";
+    Font=new Font(fonts.Families[0],9);Text="Clippy - Quick clipboard";
     BackColor=Color.FromArgb(32,32,32);ForeColor=Color.FromArgb(245,245,245);
     FormBorderStyle=FormBorderStyle.None;ShowInTaskbar=false;TopMost=true;StartPosition=FormStartPosition.Manual;
     ClientSize=new Size(360,430);Padding=new Padding(1);KeyPreview=true;AutoScaleMode=AutoScaleMode.Dpi;
@@ -54,7 +54,7 @@ public sealed class LoopQuickWindow : Form {
     searchRow=new RowStyle(SizeType.Absolute,0);layout.RowStyles.Add(searchRow);
     layout.RowStyles.Add(new RowStyle(SizeType.Percent,100));layout.RowStyles.Add(new RowStyle(SizeType.Absolute,24));layout.RowStyles.Add(new RowStyle(SizeType.Absolute,0));
     var header=new TableLayoutPanel {Dock=DockStyle.Fill,ColumnCount=4,RowCount=1,Margin=Padding.Empty};header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent,100));for(int i=0;i<3;i++)header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute,30));
-    var heading=new Label {Text="Loop",Dock=DockStyle.Fill,Font=new Font(fonts.Families[0],8),TextAlign=ContentAlignment.MiddleLeft,Margin=Padding.Empty};
+    var heading=new Label {Text="Clippy",Dock=DockStyle.Fill,Font=new Font(fonts.Families[0],8),TextAlign=ContentAlignment.MiddleLeft,Margin=Padding.Empty};
     heading.MouseDown+=(s,e)=>{if(e.Button==MouseButtons.Left){ReleaseCapture();SendMessage(Handle,0xA1,new IntPtr(2),IntPtr.Zero);}};
     var find=Button("");find.AccessibleName="Search clipboard";find.Click+=(s,e)=>ToggleSearch();find.Paint+=(s,e)=>{e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;using(var p=new Pen(ForeColor,1.2f)){e.Graphics.DrawEllipse(p,8,6,9,9);e.Graphics.DrawLine(p,16,14,21,19);}};
     var full=Button("↗");full.AccessibleName="Open full app";full.Click+=(s,e)=>{System.Diagnostics.Process.Start("http://localhost:"+port+"/");Hide();};

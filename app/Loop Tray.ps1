@@ -42,20 +42,20 @@ $loopCaptureAction.add_CheckedChanged({ $loopCapture.Enabled = $loopCaptureActio
 $loopCaptureStatus = $loopMenu.Items.Add('Auto capture on'); $loopCaptureStatus.Enabled = $false
 $loopMenu.add_Opening({ $loopCaptureStatus.Text = $loopCapture.Status })
 if (-not $loopHotkey.Registered) { $loopQuickAction.Text = 'Quick clipboard (shortcut unavailable)' }
-$loopLabel = $loopMenu.Items.Add('Checking Loop...'); $loopLabel.Enabled = $false
+$loopLabel = $loopMenu.Items.Add('Checking Clippy...'); $loopLabel.Enabled = $false
 $loopMenu.Items.Add([Windows.Forms.ToolStripSeparator]::new()) | Out-Null
-$loopOpen = $loopMenu.Items.Add('Open Loop')
-$loopStart = $loopMenu.Items.Add('Start Loop')
-$loopStop = $loopMenu.Items.Add('Stop Loop')
+$loopOpen = $loopMenu.Items.Add('Open Clippy')
+$loopStart = $loopMenu.Items.Add('Start Clippy')
+$loopStop = $loopMenu.Items.Add('Stop Clippy')
 $loopHelp = $loopMenu.Items.Add('How to use')
-$loopHide = $loopMenu.Items.Add('Hide tray icon (keep Loop running)')
+$loopHide = $loopMenu.Items.Add('Hide tray icon (keep Clippy running)')
 $loopTray.ContextMenuStrip = $loopMenu
-$loopTray.Icon = $loopRed; $loopTray.Text = 'Loop - checking'; $loopTray.Visible = $true
+$loopTray.Icon = $loopRed; $loopTray.Text = 'Clippy - checking'; $loopTray.Visible = $true
 $script:loopLastStatus = ''
 function Update-LoopTray {
   $status = Get-LoopStatus -Port $loopPort
   $loopTray.Icon = if ($status -eq 'Running') { $loopGreen } else { $loopRed }
-  $loopTray.Text = "Loop - $status"; $loopLabel.Text = "Loop is $($status.ToLower())"
+  $loopTray.Text = "Clippy - $status"; $loopLabel.Text = "Clippy is $($status.ToLower())"
   $loopStart.Enabled = $status -eq 'Stopped'; $loopStop.Enabled = $status -eq 'Running'
   if ($script:loopLastStatus -ne $status) {
     $loopTray.BalloonTipTitle = "Loop - $status"

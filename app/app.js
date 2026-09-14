@@ -726,12 +726,12 @@ function setupHostedUI(){
   descriptions[descriptions.length-1].textContent='Anyone with your invite can read, pin, and delete the space’s clips. Share it only with people you choose.';
   document.getElementById('hostPairing').hidden=true;document.getElementById('pairCodeField').hidden=true;document.getElementById('advancedConnection').hidden=true;
   const section=document.createElement('section');section.id='hostedSpace';
-  section.innerHTML='<div class="field"><label for="spaceInvite">Join with an invite link</label><input id="spaceInvite" autocomplete="off" placeholder="Paste your private invite link"></div><div class="hosted-actions"><button type="button" class="btn btn-primary" id="createSpace">Create new space</button><button type="button" class="btn btn-ghost" id="leaveSpace">Use local clipboard</button></div><div class="field" id="spaceShare" hidden><label for="shareInvite">Invite your other devices</label><input id="shareInvite" readonly aria-label="Private invite link"><button type="button" class="btn btn-ghost" id="copyInvite">Copy invite</button></div>';
+  section.innerHTML='<div class="field"><label for="spaceInvite">Join code</label><input id="spaceInvite" autocomplete="off" autocapitalize="characters" placeholder="8-character host code"></div><p class="hosted-or">or paste an invite link</p><div class="hosted-actions"><button type="button" class="btn btn-primary" id="createSpace">Host new space</button><button type="button" class="btn btn-ghost" id="leaveSpace">Use local clipboard</button></div><div class="field" id="spaceShare" hidden><label for="spaceCode">Your host code</label><input id="spaceCode" readonly aria-label="Host code"><label for="shareInvite">Optional invite link</label><input id="shareInvite" readonly aria-label="Private invite link"><button type="button" class="btn btn-ghost" id="copyInvite">Copy link</button></div>';
   form.insertBefore(section,form.querySelector('.modal-actions'));
   document.getElementById('confirmAddDevice').textContent='Join space';
   document.getElementById('createSpace').onclick=async()=>{
     const button=document.getElementById('createSpace');button.disabled=true;
-    try{const response=await fetch('/api/create-space',{method:'POST',signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error);await switchHostedSpace(result.key);openHostedConnect();document.getElementById('connectFeedback').textContent='Space created. Copy its invite to your other devices. Local clips stay in your local clipboard.';}
+    try{const response=await fetch('/api/create-space',{method:'POST',signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error);await switchHostedSpace(result.key);openHostedConnect();document.getElementById('spaceCode').value=result.joinCode;document.getElementById('connectFeedback').textContent='Space ready. Give this 8-character code to your other devices.';}
     catch(e){document.getElementById('connectFeedback').textContent=e.message || 'Could not create a space.';}finally{button.disabled=false;}
   };
   document.getElementById('leaveSpace').onclick=async()=>{try{await switchHostedSpace('');overlay.classList.remove('show');toast('Using this device’s local clipboard.');}catch(e){document.getElementById('connectFeedback').textContent=e.message;}};
@@ -761,6 +761,9 @@ async function joinHostedSpace(){
   const button=document.getElementById('confirmAddDevice');button.disabled=true;
   try{
     const invite=document.getElementById('spaceInvite').value.trim();let key=invite;
+    if(/^[A-Z0-9]{8}$/i.test(invite)){
+      const response=await fetch('/api/join-space',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:invite}),signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error);key=result.key;
+    }
     if(!/^[a-f0-9]{64}$/.test(key)){const url=new URL(invite);if(url.origin!==location.origin)throw new Error('Open that invite on its original website.');key=new URLSearchParams(url.hash.slice(1)).get('key');}
     if(!/^[a-f0-9]{64}$/.test(key||''))throw new Error('Paste a valid invite link.');
     const response=await fetch('/api/connection',{headers:{Authorization:'Bearer '+key},signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error);
@@ -768,6 +771,11 @@ async function joinHostedSpace(){
     await saveLocal();await syncNow();document.getElementById('spaceInvite').value='';overlay.classList.remove('show');toast('Joined your shared space.');
   }catch(e){document.getElementById('connectFeedback').textContent=e.message || 'Could not join the space.';}finally{button.disabled=false;}
 }
+
+// A right-click on a clip opens the same small action set as the card buttons.
+const clipMenu=document.getElementById('clipContextMenu');let clipMenuId=null;
+document.addEventListener('contextmenu',e=>{const row=e.target.closest('.item');if(!row)return;e.preventDefault();clipMenuId=row.dataset.id;const item=items.find(x=>x.id===clipMenuId);if(!item)return;clipMenu.querySelector('[data-context-action="pin"]').textContent=item.pinned?'Unpin':'Pin';clipMenu.hidden=false;clipMenu.style.left=Math.min(e.clientX,innerWidth-150)+'px';clipMenu.style.top=Math.min(e.clientY,innerHeight-150)+'px';});
+document.addEventListener('click',e=>{const action=e.target.closest('[data-context-action]');if(action&&clipMenuId){const fn={copy:copyItem,pin:togglePin,delete:id=>deleteItems([id])}[action.dataset.contextAction];fn?.(clipMenuId);}if(!e.target.closest('#clipContextMenu'))clipMenu.hidden=true;});
 let pairingAddresses=[];
 function showPairAddress(){
   const address=pairingAddresses[Number(document.getElementById('networkChoice').value)];

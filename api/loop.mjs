@@ -63,8 +63,21 @@ export default async function handler(req, res) {
     if (route === 'create-space' && req.method === 'POST') {
       await rate(req, 'create', 10, 3600);
       const accessKey = randomBytes(32).toString('hex');
-      await redis(['SET', `${namespace()}:space:${hash(accessKey)}`, JSON.stringify({ items: [], devices: [], removedDevices: [] }), 'EX', String(ttl()), 'NX']);
-      return reply(res, 201, { key: accessKey });
+      const joinCode = randomBytes(6).toString('base64url').slice(0, 8).toUpperCase();
+      const saved = await redis(['SET', `${namespace()}:space:${hash(accessKey)}`, JSON.stringify({ items: [], devices: [], removedDevices: [] }), 'EX', String(ttl()), 'NX']);
+      if (saved !== 'OK') throw new APIError(503, 'Could not create the shared space.');
+      await redis(['SET', `${namespace()}:code:${hash(joinCode)}`, accessKey, 'EX', String(ttl()), 'NX']);
+      return reply(res, 201, { key: accessKey, joinCode });
+    }
+    if (route === 'join-space' && req.method === 'POST') {
+      await rate(req, 'join', 30, 60);
+      const body = await bodyJSON(req);
+      const joinCode = String(body.code || '').trim().toUpperCase();
+      if (!/^[A-Z0-9]{8}$/.test(joinCode)) throw new APIError(400, 'Enter the 8-character host code.');
+      const accessKey = await redis(['GET', `${namespace()}:code:${hash(joinCode)}`]);
+      if (!accessKey) throw new APIError(404, 'That host code expired or is incorrect.');
+      if (!await redis(['EXISTS', `${namespace()}:space:${hash(accessKey)}`])) throw new APIError(410, 'That shared space expired.');
+      return reply(res, 200, { key: accessKey });
     }
     if (!['sync', 'connection', 'remove-device'].includes(route)) throw new APIError(404, 'Not available in the hosted app.');
     const key = (req.headers.authorization || '').replace(/^Bearer /, '');
