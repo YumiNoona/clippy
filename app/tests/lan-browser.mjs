@@ -1,0 +1,37 @@
+import {mkdtempSync,rmSync,mkdirSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import assert from 'node:assert/strict';
+import {createLoopServer,lanAddresses} from '../server.mjs';
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const dir=mkdtempSync(join(tmpdir(),'loop-lan-'));
+const {server}=createLoopServer({dataDir:dir});
+await new Promise(r=>server.listen(0,'0.0.0.0',r));
+const port=server.address().port,lan=lanAddresses(port)[0]?.url;
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{
+  assert.ok(lan,'A Wi-Fi/LAN interface is required for this test');
+  const desktop=await browser.newContext();const mobile=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  const pc=await desktop.newPage(),phone=await mobile.newPage();const errors=[];
+  for(const p of [pc,phone])p.on('pageerror',e=>errors.push(e.message));
+  await pc.goto(`http://localhost:${port}`);
+  await pc.waitForFunction(()=>document.getElementById('statusText').textContent==='All changes synced');
+  await pc.locator('#connectButton').click();await pc.locator('#generatePairCode').click();
+  await pc.locator('#pairQR').waitFor({state:'visible'});
+  const code=await pc.locator('#pairDigits').textContent();
+  await phone.goto(lan+'/#pair='+code);
+  await phone.waitForFunction(()=>document.getElementById('statusText').textContent==='All changes synced');
+  assert.equal(await phone.evaluate(()=>isSecureContext),false,'Exercise plain HTTP, not localhost secure-context behavior');
+  assert.equal(new URL(phone.url()).hash,'');
+  await phone.locator('#pasteButton').click();await phone.locator('#composerText').fill('Phone over Wi-Fi');await phone.locator('#saveNote').click();
+  await pc.locator('#cancelAddDevice').click();
+  await pc.waitForFunction(()=>document.getElementById('listScroll').textContent.includes('Phone over Wi-Fi'),{},{timeout:15000});
+  await phone.reload();await phone.waitForFunction(()=>document.getElementById('statusText').textContent==='All changes synced');
+  await phone.locator('.item').filter({hasText:'Phone over Wi-Fi'}).locator('[data-act=copy]').click();
+  assert.ok(await phone.locator('#toastWrap').textContent().then(x=>x.includes('Copied')) || await phone.locator('#composerOverlay').evaluate(x=>x.classList.contains('show')));
+  await phone.locator('#connectButton').click();assert.equal(await phone.locator('#hostPairing').isVisible(),false);
+  mkdirSync('test-results',{recursive:true});await pc.locator('#connectButton').click();
+  await pc.waitForFunction(()=>getComputedStyle(document.getElementById('addDeviceOverlay')).opacity==='1');
+  await pc.screenshot({path:'test-results/wifi-pairing.png'});
+  assert.deepEqual(errors,[]);console.log('PASS: localhost auto-connect, QR/code pairing, real LAN HTTP origin, phone paste/copy fallback, sync and remembered pairing');
+}finally{await browser.close();await new Promise(r=>server.close(r));rmSync(dir,{recursive:true,force:true});}

@@ -1,0 +1,11 @@
+.git
+app/data
+app/node_modules
+app/runtime
+app/test-results
+app/tests
+app/releases
+*.zip
+*.log
+.env*
+!.env.example

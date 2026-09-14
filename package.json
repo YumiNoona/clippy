@@ -1,0 +1,12 @@
+{
+  "name": "clippy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Loop clipboard: a private shared clipboard for browsers and Windows",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm --prefix app start"
+  },
+  "engines": { "node": "22.x" }
+}

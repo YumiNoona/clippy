@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Loop — Universal Clipboard</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#121212">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preload" href="/fonts/JetBrainsMono-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="/ui.css">
+</head>
+<body>
+<div class="app" id="app">
+
+  <div class="titlebar">
+    <div class="titlebar-left">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open navigation" style="width:30px;height:30px;"></button>
+      <span class="top-brand">Loop<span class="brand-divider">/</span><span>clipboard</span></span>
+      <div class="titlebar-status" id="globalStatus">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Loading…</span>
+      </div>
+    </div>
+    <div class="titlebar-right"><button class="shortcut-trigger" id="shortcutHelp" aria-label="Keyboard shortcuts"><span class="desktop-label">Shortcuts</span><kbd>?</kbd></button>
+      <button class="toggle-online" id="onlineToggle" type="button" aria-pressed="true">
+        <span id="onlineLabel">Online</span>
+        <span class="switch on" id="onlineSwitch"></span>
+      </button>
+    </div>
+  </div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img class="brand-symbol" src="/icon.svg" alt="" width="36" height="36">
+      Loop
+    </div>
+    <div class="sidebar-scroll">
+      <div class="nav-label">Library</div>
+      <div id="navFilters"></div>
+
+      <div class="nav-label">Devices</div>
+      <div id="deviceList"></div>
+      <button class="add-device-btn" id="openAddDevice">+ Add a device</button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="storage-row"><span>Synced storage</span><span id="storageText">—</span></div>
+      <div class="storage-bar"><div class="storage-fill" id="storageFill" style="width:0%"></div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="list-col">
+      <div class="offline-banner" id="offlineBanner">
+        <span></span><b>You're offline.</b> New items are queued and will sync automatically once you're back online. <span class="spacer"></span><span id="queueCount"></span>
+      </div>
+      <div class="bulkbar" id="bulkbar">
+        <span id="bulkCount">0 selected</span>
+        <span class="sep"></span>
+        <div class="mini-btn" id="bulkPin" title="Pin"></div>
+        <div class="mini-btn" id="bulkFav" title="Favorite"></div>
+        <div class="mini-btn" id="bulkCopy" title="Copy"></div>
+        <div class="mini-btn danger" id="bulkDelete" title="Delete"></div>
+        <span class="bulkbar-spacer"></span>
+        <button class="btn btn-ghost" id="bulkCancel" style="padding:6px 12px;">Cancel</button>
+      </div>
+      <div class="toolbar">
+        <div class="workspace-heading"><div><p class="eyebrow">YOUR SHARED SPACE</p><h1>Clipboard<span class="heading-dot">.</span></h1><p class="workspace-sub">Text, links, and files. Right where you need them.</p></div><span class="library-total" id="libraryTotal">0 clips</span></div>
+        <div class="toolbar-top">
+          <div class="search-wrap">
+            <span id="searchIcon"></span>
+            <input id="searchInput" aria-label="Search clipboard history" placeholder="Search clipboard history…" />
+            <span class="kbd">Ctrl K</span>
+          </div>
+          <button class="icon-btn" id="selectModeBtn" title="Select"></button>
+          <button class="btn btn-primary" id="pasteButton" title="Add the current clipboard"><span id="plusIcon"></span>Paste</button>
+        </div>
+        <div class="toolbar-tabs" id="typeTabs"></div>
+        <div class="entry-actions"><button class="btn btn-ghost" id="writeNote"><span class="wide-caption">Type or paste text</span><span class="small-caption">New text</span></button><button class="btn btn-ghost" id="uploadFile"><span class="wide-caption">Add image / file</span><span class="small-caption">Add file</span></button><button class="btn btn-ghost" id="connectButton"><span class="wide-caption">Connect devices</span><span class="small-caption">Devices</span></button></div>
+        <input type="file" id="fileInput" hidden>
+      </div>
+      <div class="list-scroll" id="listScroll" aria-label="Clipboard items"></div><div class="workspace-foot"><span>On your network. Across your devices.</span><span class="desktop-label">Quick clipboard <kbd>Ctrl Alt V</kbd></span></div>
+    </div>
+
+    <aside class="detail-col hidden" id="detailCol">
+      <div class="detail-head">
+        <div class="detail-head-title"><span id="detailHeadIcon"></span><span id="detailHeadType">Item</span></div>
+        <div class="icon-btn" id="closeDetail" style="width:30px;height:30px;"></div>
+      </div>
+      <div class="detail-scroll" id="detailScroll"></div>
+    </aside>
+  </main>
+</div>
+
+<button class="nav-scrim" id="navScrim" aria-label="Close navigation" hidden></button>
+<div class="overlay" id="addDeviceOverlay" role="dialog" aria-modal="true" aria-labelledby="connectTitle">
+  <form class="modal" id="connectForm">
+    <h3 id="connectTitle">Connect over Wi-Fi</h3>
+    <p class="sub">Connect to the same Wi-Fi or phone hotspot. On the PC, generate a QR code and scan it with your phone camera. No internet account is needed.</p>
+    <div class="field"><label for="newDeviceName">This device's name</label><input id="newDeviceName" maxlength="100" autocomplete="off"></div>
+    <section id="hostPairing" hidden>
+      <button class="btn btn-primary" type="button" id="generatePairCode">Pair a phone or tablet</button>
+      <div id="pairingResult" hidden><p class="sub">Scan for one device. Expires in 5 minutes. Generate another code for your next device.</p><label for="networkChoice">Wi-Fi / hotspot address</label><select id="networkChoice"></select><img id="pairQR" alt="Scan to connect this phone to Loop" width="240" height="240"><p><a id="pairAddress" target="_blank" rel="noreferrer"></a></p><p class="pair-code" id="pairDigits"></p></div>
+    </section>
+    <div class="field" id="pairCodeField"><label for="joinCode">Six-digit code from the PC</label><input id="joinCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div>
+    <details id="advancedConnection"><summary>Advanced: use an access key</summary><div class="field"><label for="accessKey">Access key</label><input id="accessKey" type="password" autocomplete="off" placeholder="Optional: existing access key"></div></details>
+    <p class="sub">Keep the PC awake while transferring; its Loop window can be closed. At the office, a phone hotspot can avoid Wi-Fi that blocks device connections. Use this on a trusted network.</p>
+    <div class="modal-actions"><button class="btn btn-ghost" id="cancelAddDevice" type="button">Close</button><button class="btn btn-primary" id="confirmAddDevice" type="submit">Connect</button></div>
+    <p id="connectFeedback" role="status"></p>
+  </form>
+</div>
+<div class="overlay" id="composerOverlay" role="dialog" aria-modal="true" aria-labelledby="composerTitle">
+  <form class="modal" id="composerForm"><h3 id="composerTitle">Type or paste text</h3><p class="sub" id="composerHint">Long-press in the box to paste on a phone. Formatting and line breaks are preserved.</p>
+    <textarea id="composerText" rows="8" aria-label="Clipboard text" maxlength="1000000"></textarea>
+    <div class="modal-actions"><button class="btn btn-ghost" type="button" id="closeComposer">Close</button><button class="btn btn-primary" id="saveNote" type="submit">Save to Loop</button></div>
+  </form>
+</div>
+
+<dialog id="shortcutsDialog" class="shortcuts-dialog"><form method="dialog"><div class="dialog-title"><h2>Make it a shortcut.</h2><button class="icon-btn" aria-label="Close shortcuts">×</button></div><p>Less clicking. More doing.</p><dl><div><dt>Quick clipboard · Windows</dt><dd><kbd>Ctrl Alt V</kbd></dd></div><div><dt>Find a clip</dt><dd><kbd>Ctrl K</kbd></dd></div><div><dt>New text clip</dt><dd><kbd>Ctrl Shift L</kbd></dd></div><div><dt>Save text in the editor</dt><dd><kbd>Ctrl Enter</kbd></dd></div><div><dt>Move through clips</dt><dd><kbd>↑ ↓</kbd></dd></div><div><dt>Copy focused clip</dt><dd><kbd>Ctrl C</kbd></dd></div><div><dt>Close panel</dt><dd><kbd>Esc</kbd></dd></div></dl><p class="note">On Mac, use ⌘ instead of Ctrl for in-app shortcuts. Windows quick access needs the Loop tray running.</p></form></dialog>
+<div class="toast-wrap" id="toastWrap" role="status" aria-live="polite"></div>
+
+<script src="/app.js" defer></script>
+
+</body>
+</html>
