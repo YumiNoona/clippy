@@ -733,8 +733,12 @@ function setupHostedUI(){
   section.innerHTML='<div class="space-choice" id="spaceChoice"><button type="button" class="btn btn-primary" id="showHost">Host a space</button><button type="button" class="btn btn-ghost" id="showJoin">Join a space</button></div><div id="hostPanel" hidden><p class="space-label">Share this code</p><output id="spaceCode" class="space-code">----</output><p class="sub">Open Clippy on another device and enter these four digits.</p><div class="hosted-actions"><button type="button" class="btn btn-ghost" id="copyInvite">Copy optional invite link</button><button type="button" class="btn btn-ghost" id="leaveSpace">Leave space</button></div></div><div id="joinPanel" hidden><div class="field"><label for="spaceInvite">Four-digit host code or invite link</label><input id="spaceInvite" inputmode="text" autocomplete="one-time-code" maxlength="1000" placeholder="0000"></div></div><input id="shareInvite" hidden>';
   form.insertBefore(section,form.querySelector('.modal-actions'));
   const confirm=document.getElementById('confirmAddDevice');
-  confirm.hidden=true;
-  const showMode=mode=>{document.getElementById('spaceChoice').hidden=mode==='host';document.getElementById('hostPanel').hidden=mode!=='host';document.getElementById('joinPanel').hidden=mode!=='join';confirm.hidden=mode!=='join';document.getElementById('connectFeedback').textContent='';if(mode==='join')document.getElementById('spaceInvite').focus();};
+  const cancel=document.getElementById('cancelAddDevice');
+  const modalActions=form.querySelector('.modal-actions');
+  cancel.hidden=true;cancel.style.display='none';
+  confirm.hidden=true;confirm.style.display='none';
+  modalActions.hidden=true;
+  const showMode=mode=>{document.getElementById('spaceChoice').hidden=mode==='host';document.getElementById('hostPanel').hidden=mode!=='host';document.getElementById('joinPanel').hidden=mode!=='join';modalActions.hidden=mode!=='join';confirm.hidden=mode!=='join';confirm.style.display=mode==='join'?'':'none';document.getElementById('connectFeedback').textContent='';if(mode==='join')document.getElementById('spaceInvite').focus();};
   confirm.textContent='Join space';
   document.getElementById('showHost').onclick=async()=>{
     const button=document.getElementById('showHost');button.disabled=true;
@@ -752,7 +756,7 @@ function openHostedConnect(){
   document.getElementById('connectionModeHint').textContent='Cloud mode works across home Wi-Fi, office networks, mobile data, Android, iPhone, tablets, and PCs. Share the host code or invite link.';
   document.getElementById('newDeviceName').value=devices.find(d=>d.id===state.myDeviceId)?.name || '';
   document.getElementById('spaceCode').textContent='----';document.getElementById('shareInvite').value=accessKey?location.origin+'/#key='+accessKey:'';
-  document.getElementById('hostPanel').hidden=true;document.getElementById('joinPanel').hidden=true;document.getElementById('confirmAddDevice').hidden=true;
+  document.getElementById('hostPanel').hidden=true;document.getElementById('joinPanel').hidden=true;document.getElementById('confirmAddDevice').hidden=true;document.getElementById('confirmAddDevice').style.display='none';document.querySelector('#connectForm .modal-actions').hidden=true;
   document.getElementById('connectFeedback').textContent='';
 }
 async function switchHostedSpace(key){
