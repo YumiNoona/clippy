@@ -50,6 +50,7 @@ let state = {
   ready:false,       // true once initial load + device registration finished
   myDeviceId:null,
   syncing:false,
+  receivePaused:false,
 };
 
 const deviceIcon = t => t==='phone'?'phone':t==='tablet'?'tablet':'desktop';
@@ -135,6 +136,7 @@ function renderSidebar(){
     const st = deviceStatus(d);
     const el = document.createElement('div');
     el.className='device-row'+(state.deviceFilter===d.id?' active':'');
+    el.dataset.deviceId=d.id;
     const sub = isThis ? 'This device' : st==='online' ? 'Online now' : st==='idle' ? 'Synced · '+fmtTime(d.lastSeen) : 'Offline · '+fmtTime(d.lastSeen||0);
     el.innerHTML = `<div class="device-ic">${icHTML(deviceIcon(d.type))}<span class="dstatus ${st==='online'?'':st==='idle'?'pending':'off'}"></span></div>
       <div class="device-meta"><div class="device-name">${escapeHtml(d.name)}${isThis?' <span style=\"color:var(--text-faint)\">(you)</span>':''}</div><div class="device-sub">${sub}</div></div>`;
@@ -143,8 +145,9 @@ function renderSidebar(){
     if(!isThis && !['windows-capture','windows-quick'].includes(d.id)){
       const remove=document.createElement('button');remove.className='remove-device';remove.innerHTML=icHTML('x');remove.title='Remove '+d.name;remove.setAttribute('aria-label','Remove '+d.name);
       remove.onclick=async e=>{e.stopPropagation();remove.disabled=true;try{
-        const response=await fetch('/api/remove-device',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+accessKey},body:JSON.stringify({id:d.id}),signal:AbortSignal.timeout(15000)});
-        if(!response.ok)throw new Error();devices=(await response.json()).devices;if(state.deviceFilter===d.id)state.deviceFilter=null;await saveLocal();render();toast('Device removed. Pair it again to reconnect.');
+        if(accessKey){const response=await fetch('/api/remove-device',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+accessKey},body:JSON.stringify({id:d.id}),signal:AbortSignal.timeout(15000)});if(!response.ok)throw new Error();devices=(await response.json()).devices;}
+        else devices=devices.filter(x=>x.id!==d.id);
+        if(state.deviceFilter===d.id)state.deviceFilter=null;await saveLocal();render();toast('Device removed. Pair it again to reconnect.');
       }catch{toast('Could not remove device. Check the connection.','offline');remove.disabled=false;}};el.appendChild(remove);
     }
   });
@@ -643,7 +646,7 @@ function saveLocal(){
   });
 }
 function mergeSync(remote, sent){
-  const remoteById=new Map(remote.items.map(x=>[x.id,x]));
+  const remoteById=new Map((state.receivePaused ? [] : remote.items).map(x=>[x.id,x]));
   const resolved=new Set([...remote.acknowledged,...remote.conflicts]);
   items=items.map(local=>{
     const other=remoteById.get(local.id);
@@ -776,8 +779,10 @@ async function joinHostedSpace(){
 
 // A right-click on a clip opens the same small action set as the card buttons.
 const clipMenu=document.getElementById('clipContextMenu');let clipMenuId=null;
+const deviceMenu=document.getElementById('deviceContextMenu');let deviceMenuId=null;
 document.addEventListener('contextmenu',e=>{const row=e.target.closest('.item');if(!row)return;e.preventDefault();clipMenuId=row.dataset.id;const item=items.find(x=>x.id===clipMenuId);if(!item)return;clipMenu.querySelector('[data-context-action="pin"]').textContent=item.pinned?'Unpin':'Pin';clipMenu.hidden=false;clipMenu.style.left=Math.min(e.clientX,innerWidth-150)+'px';clipMenu.style.top=Math.min(e.clientY,innerHeight-150)+'px';});
-document.addEventListener('click',e=>{const action=e.target.closest('[data-context-action]');if(action&&clipMenuId){const fn={copy:copyItem,pin:togglePin,delete:id=>deleteItems([id])}[action.dataset.contextAction];fn?.(clipMenuId);}if(!e.target.closest('#clipContextMenu'))clipMenu.hidden=true;});
+document.addEventListener('contextmenu',e=>{const row=e.target.closest('.device-row');if(!row)return;e.preventDefault();deviceMenuId=row.dataset.deviceId;const d=devices.find(x=>x.id===deviceMenuId);if(!d)return;deviceMenu.querySelector('[data-device-action="pause"]').textContent=(d.id===state.myDeviceId&&state.receivePaused)?'Resume receiving':'Pause receiving';deviceMenu.hidden=false;deviceMenu.style.left=Math.min(e.clientX,innerWidth-170)+'px';deviceMenu.style.top=Math.min(e.clientY,innerHeight-150)+'px';});
+document.addEventListener('click',async e=>{const action=e.target.closest('[data-context-action]');if(action&&clipMenuId){const fn={copy:copyItem,pin:togglePin,delete:id=>deleteItems([id])}[action.dataset.contextAction];fn?.(clipMenuId);}const da=e.target.closest('[data-device-action]');if(da&&deviceMenuId){const d=devices.find(x=>x.id===deviceMenuId);if(d){if(da.dataset.deviceAction==='rename'){const name=prompt('Device name',d.name);if(name?.trim()){d.name=name.trim();await saveLocal();render();}}else if(da.dataset.deviceAction==='pause'&&d.id===state.myDeviceId){state.receivePaused=!state.receivePaused;toast(state.receivePaused?'Receiving paused on this device.':'Receiving resumed.');render();}else if(da.dataset.deviceAction==='remove'){const btn=[...document.querySelectorAll('.remove-device')].find(x=>x.parentElement?.dataset.deviceId===deviceMenuId);btn?.click();}}}if(!e.target.closest('#clipContextMenu'))clipMenu.hidden=true;if(!e.target.closest('#deviceContextMenu'))deviceMenu.hidden=true;});
 let pairingAddresses=[];
 function showPairAddress(){
   const address=pairingAddresses[Number(document.getElementById('networkChoice').value)];
