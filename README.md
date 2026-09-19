@@ -82,7 +82,7 @@ Vercel Functions do not keep a durable local clipboard file. Hosted storage uses
 ### How to share the hosted app
 
 1. Send people your Vercel homepage URL. They need only a browser.
-2. Create a private space and share the **eight-character host code** or choose **Copy link**.
+2. Create a private space and share the **four-digit host code** or choose **Copy invite link**.
 3. On another device, open the same Vercel URL, choose **Devices**, and enter the host code or paste the invite link. This works across different Wi-Fi networks and mobile data.
 4. Add a clip. Other open devices pull changes every few seconds.
 

@@ -723,35 +723,40 @@ async function openConnect(){
   }else document.getElementById('joinCode').focus();
 }
 function setupHostedUI(){
-  document.getElementById('connectTitle').textContent='Your shared space';
+  document.getElementById('connectTitle').textContent='Connect devices';
   const form=document.getElementById('connectForm');
   const descriptions=form.querySelectorAll(':scope > .sub');
-  descriptions[0].textContent='Create a private space and open its invite on your other devices. No installation or account needed.';
-  descriptions[descriptions.length-1].textContent='Anyone with your invite can read, pin, and delete the space’s clips. Share it only with people you choose.';
+  descriptions[0].textContent='Host once, then join from any phone, tablet, or PC with a four-digit code.';
+  descriptions[descriptions.length-1].textContent='Your clips sync privately across this shared space.';
   document.getElementById('hostPairing').hidden=true;document.getElementById('pairCodeField').hidden=true;document.getElementById('advancedConnection').hidden=true;
   const section=document.createElement('section');section.id='hostedSpace';
-  section.innerHTML='<div class="field"><label for="spaceInvite">Join code</label><input id="spaceInvite" autocomplete="off" autocapitalize="characters" placeholder="8-character host code"></div><p class="hosted-or">or paste an invite link</p><div class="hosted-actions"><button type="button" class="btn btn-primary" id="createSpace">Host new space</button><button type="button" class="btn btn-ghost" id="leaveSpace">Use local clipboard</button></div><div class="field" id="spaceShare" hidden><label for="spaceCode">Your host code</label><input id="spaceCode" readonly aria-label="Host code"><label for="shareInvite">Optional invite link</label><input id="shareInvite" readonly aria-label="Private invite link"><button type="button" class="btn btn-ghost" id="copyInvite">Copy link</button></div>';
+  section.innerHTML='<div class="space-choice"><button type="button" class="btn btn-primary" id="showHost">Host a space</button><button type="button" class="btn btn-ghost" id="showJoin">Join with code</button></div><div id="hostPanel" hidden><p class="space-label">Share this code</p><output id="spaceCode" class="space-code">----</output><p class="sub">Open Clippy on another device and enter this code.</p><div class="hosted-actions"><button type="button" class="btn btn-primary" id="createSpace">Create code</button><button type="button" class="btn btn-ghost" id="copyInvite">Copy invite link</button><button type="button" class="btn btn-ghost" id="leaveSpace">Leave space</button></div></div><div id="joinPanel" hidden><div class="field"><label for="spaceInvite">Four-digit host code</label><input id="spaceInvite" inputmode="numeric" autocomplete="one-time-code" maxlength="4" placeholder="0000"></div></div><input id="shareInvite" hidden>';
   form.insertBefore(section,form.querySelector('.modal-actions'));
-  document.getElementById('confirmAddDevice').textContent='Join space';
+  const confirm=document.getElementById('confirmAddDevice');
+  const showMode=mode=>{document.getElementById('hostPanel').hidden=mode!=='host';document.getElementById('joinPanel').hidden=mode!=='join';confirm.hidden=mode!=='join';document.getElementById('connectFeedback').textContent='';if(mode==='join')document.getElementById('spaceInvite').focus();};
+  document.getElementById('showHost').onclick=()=>showMode('host');document.getElementById('showJoin').onclick=()=>showMode('join');
+  confirm.textContent='Join space';
   document.getElementById('createSpace').onclick=async()=>{
     const button=document.getElementById('createSpace');button.disabled=true;
-    try{const response=await fetch('/api/create-space',{method:'POST',signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error);await switchHostedSpace(result.key);openHostedConnect();document.getElementById('spaceCode').value=result.joinCode;document.getElementById('connectFeedback').textContent='Space ready. Give this 8-character code to your other devices.';}
+    try{const response=await fetch('/api/create-space',{method:'POST',signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error);await switchHostedSpace(result.key);document.getElementById('spaceCode').textContent=result.joinCode;document.getElementById('shareInvite').value=location.origin+'/#key='+result.key;document.getElementById('connectFeedback').textContent='Ready. Give the four digits to your other device.';}
     catch(e){document.getElementById('connectFeedback').textContent=e.message || 'Could not create a space.';}finally{button.disabled=false;}
   };
   document.getElementById('leaveSpace').onclick=async()=>{try{await switchHostedSpace('');overlay.classList.remove('show');toast('Using this device’s local clipboard.');}catch(e){document.getElementById('connectFeedback').textContent=e.message;}};
-  document.getElementById('copyInvite').onclick=async()=>{const input=document.getElementById('shareInvite');try{lastBrowserClipboard=input.value;await writeClipboard(input.value);toast('Invite copied.');}catch{input.focus();input.select();document.getElementById('connectFeedback').textContent='Select and copy the invite link.';}};
+  document.getElementById('copyInvite').onclick=async()=>{const input=document.getElementById('shareInvite');try{lastBrowserClipboard=input.value;await writeClipboard(input.value);toast('Invite copied.');}catch{document.getElementById('connectFeedback').textContent='Copy the link from your browser address bar.';}};
   const help=document.createElement('a');help.href='https://github.com/YumiNoona/clippy#readme';help.target='_blank';help.rel='noreferrer';help.className='shortcut-trigger';help.textContent='Help';document.querySelector('.titlebar-right').prepend(help);
 }
 function openHostedConnect(){
   overlay.classList.add('show');
   document.getElementById('connectionModeHint').textContent='Cloud mode works across home Wi-Fi, office networks, mobile data, Android, iPhone, tablets, and PCs. Share the host code or invite link.';
   document.getElementById('newDeviceName').value=devices.find(d=>d.id===state.myDeviceId)?.name || '';
-  document.getElementById('spaceShare').hidden=!accessKey;document.getElementById('leaveSpace').hidden=!accessKey;
-  document.getElementById('shareInvite').value=accessKey?location.origin+'/#key='+accessKey:'';
-  document.getElementById('connectFeedback').textContent=accessKey?'Connected to your private space.':'Your local clipboard works immediately. Create a space to share across devices.';
+  document.getElementById('spaceCode').textContent='----';document.getElementById('shareInvite').value=accessKey?location.origin+'/#key='+accessKey:'';
+  document.getElementById('hostPanel').hidden=true;document.getElementById('joinPanel').hidden=true;document.getElementById('confirmAddDevice').hidden=true;
+  document.getElementById('connectFeedback').textContent='';
 }
 async function switchHostedSpace(key){
-  if(state.syncing)throw new Error('A sync is in progress. Try again in a moment.');
+  const deadline=Date.now()+5000;
+  while(state.syncing && Date.now()<deadline)await new Promise(resolve=>setTimeout(resolve,100));
+  if(state.syncing)throw new Error('Finishing the current sync. Try once more in a few seconds.');
   await saveLocal();
   const saved=await dbGet('clipboard:'+(key||'local'));
   await dbPut('accessKey',key);accessKey=key;
@@ -766,11 +771,11 @@ async function joinHostedSpace(){
   const button=document.getElementById('confirmAddDevice');button.disabled=true;
   try{
     const invite=document.getElementById('spaceInvite').value.trim();let key=invite;
-    if(/^[A-Z0-9]{8}$/i.test(invite)){
+    if(/^\d{4}$/.test(invite)){
       const response=await fetch('/api/join-space',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:invite}),signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error);key=result.key;
     }
     if(!/^[a-f0-9]{64}$/.test(key)){const url=new URL(invite);if(url.origin!==location.origin)throw new Error('Open that invite on its original website.');key=new URLSearchParams(url.hash.slice(1)).get('key');}
-    if(!/^[a-f0-9]{64}$/.test(key||''))throw new Error('Paste a valid invite link.');
+    if(!/^[a-f0-9]{64}$/.test(key||''))throw new Error('Enter the four-digit code or paste a valid invite link.');
     const response=await fetch('/api/connection',{headers:{Authorization:'Bearer '+key},signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok)throw new Error(result.error);
     await switchHostedSpace(key);devices.find(d=>d.id===state.myDeviceId).name=document.getElementById('newDeviceName').value.trim() || detectDevice().name;
     await saveLocal();await syncNow();document.getElementById('spaceInvite').value='';overlay.classList.remove('show');toast('Joined your shared space.');

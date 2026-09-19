@@ -63,18 +63,18 @@ export default async function handler(req, res) {
     if (route === 'create-space' && req.method === 'POST') {
       await rate(req, 'create', 10, 3600);
       const accessKey = randomBytes(32).toString('hex');
-      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      const joinCode = Array.from(randomBytes(8), byte => alphabet[byte % alphabet.length]).join('');
+      const joinCode = String(randomBytes(2).readUInt16BE(0) % 10000).padStart(4, '0');
       const saved = await redis(['SET', `${namespace()}:space:${hash(accessKey)}`, JSON.stringify({ items: [], devices: [], removedDevices: [] }), 'EX', String(ttl()), 'NX']);
       if (saved !== 'OK') throw new APIError(503, 'Could not create the shared space.');
-      await redis(['SET', `${namespace()}:code:${hash(joinCode)}`, accessKey, 'EX', String(ttl()), 'NX']);
+      const codeSaved = await redis(['SET', `${namespace()}:code:${hash(joinCode)}`, accessKey, 'EX', String(ttl()), 'NX']);
+      if (codeSaved !== 'OK') throw new APIError(409, 'That code was just taken. Create the space again.');
       return reply(res, 201, { key: accessKey, joinCode });
     }
     if (route === 'join-space' && req.method === 'POST') {
-      await rate(req, 'join', 30, 60);
+      await rate(req, 'join', 10, 60);
       const body = await bodyJSON(req);
       const joinCode = String(body.code || '').trim().toUpperCase();
-      if (!/^[A-Z0-9]{8}$/.test(joinCode)) throw new APIError(400, 'Enter the 8-character host code.');
+      if (!/^\d{4}$/.test(joinCode)) throw new APIError(400, 'Enter the 4-digit host code.');
       const accessKey = await redis(['GET', `${namespace()}:code:${hash(joinCode)}`]);
       if (!accessKey) throw new APIError(404, 'That host code expired or is incorrect.');
       if (!await redis(['EXISTS', `${namespace()}:space:${hash(accessKey)}`])) throw new APIError(410, 'That shared space expired.');
@@ -116,7 +116,10 @@ export default async function handler(req, res) {
         if (next.deleted) { next.content = ''; next.title = 'Deleted item'; delete next.meta; }
         byId.set(x.id, next); acknowledged.push(x.mutation);
       }
-      db.items = [...byId.values()];
+      // Deleted clips contain no content or file data and are capped so free Redis plans stay small.
+      const live = [...byId.values()].filter(x => !x.deleted);
+      const tombstones = [...byId.values()].filter(x => x.deleted).sort((a,b) => b.updatedAt - a.updatedAt).slice(0, 100);
+      db.items = [...live, ...tombstones];
       db.devices = db.devices.filter(x => x.id !== d.id).concat({ id: d.id, name: d.name, type: d.type, lastSeen: Date.now(), updatedAt: Date.now() }).slice(-100);
       return { db, result: { items: db.items, devices: db.devices, acknowledged, conflicts } };
     });
