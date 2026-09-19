@@ -68,7 +68,6 @@
         <button class="btn btn-ghost" id="bulkCancel" style="padding:6px 12px;">Cancel</button>
       </div>
       <div class="toolbar">
-        <div class="workspace-heading"><div><p class="eyebrow">YOUR SHARED SPACE</p><h1>Clipboard<span class="heading-dot">.</span></h1><p class="workspace-sub">Text, links, and files. Right where you need them.</p></div><span class="library-total" id="libraryTotal">0 clips</span></div>
         <div class="toolbar-top">
           <div class="search-wrap">
             <span id="searchIcon"></span>
@@ -117,6 +116,9 @@
     <textarea id="composerText" rows="8" aria-label="Clipboard text" maxlength="1000000"></textarea>
     <div class="modal-actions"><button class="btn btn-ghost" type="button" id="closeComposer">Close</button><button class="btn btn-primary" id="saveNote" type="submit">Save to Clippy</button></div>
   </form>
+</div>
+<div class="overlay" id="deviceRenameOverlay" role="dialog" aria-modal="true" aria-labelledby="renameDeviceTitle">
+  <form class="modal" id="renameDeviceForm"><h3 id="renameDeviceTitle">Rename device</h3><div class="field"><label for="renameDeviceInput">Device name</label><input id="renameDeviceInput" maxlength="100" autocomplete="off"></div><div class="modal-actions"><button class="btn btn-ghost" type="button" id="cancelRenameDevice">Cancel</button><button class="btn btn-primary" type="submit">Save name</button></div></form>
 </div>
 
 <dialog id="shortcutsDialog" class="shortcuts-dialog"><form method="dialog"><div class="dialog-title"><h2>Make it a shortcut.</h2><button class="icon-btn" aria-label="Close shortcuts">×</button></div><p>Less clicking. More doing.</p><dl><div><dt>Quick clipboard · Windows</dt><dd><kbd>Ctrl Alt V</kbd></dd></div><div><dt>Find a clip</dt><dd><kbd>Ctrl K</kbd></dd></div><div><dt>New text clip</dt><dd><kbd>Ctrl Shift L</kbd></dd></div><div><dt>Save text in the editor</dt><dd><kbd>Ctrl Enter</kbd></dd></div><div><dt>Move through clips</dt><dd><kbd>↑ ↓</kbd></dd></div><div><dt>Copy focused clip</dt><dd><kbd>Ctrl C</kbd></dd></div><div><dt>Close panel</dt><dd><kbd>Esc</kbd></dd></div></dl><p class="note">On Mac, use ⌘ instead of Ctrl for in-app shortcuts. Windows quick access needs the Loop tray running.</p></form></dialog>

@@ -93,6 +93,15 @@ export function createLoopServer({ dataDir = join(root, 'data') } = {}) {
           return json(res,200,{devices:db.devices});
         }catch{return json(res,500,{error:'Could not remove device.'});}
       }
+      if(path==='/api/rename-device' && req.method==='POST'){
+        try{
+          const body=await readSmallJSON(req);
+          if(typeof body.id!=='string' || body.id.length>100 || typeof body.name!=='string' || !body.name.trim() || body.name.length>100)return json(res,400,{error:'Enter a valid device name.'});
+          const devices=db.devices.map(d=>d.id===body.id?{...d,name:body.name.trim(),updatedAt:Date.now()}:d);
+          if(!devices.some(d=>d.id===body.id))return json(res,404,{error:'Device not found.'});
+          saveDb({...db,devices});return json(res,200,{devices});
+        }catch{return json(res,500,{error:'Could not rename device.'});}
+      }
       if(path==='/api/stop' && req.method==='POST'){
         if(!localRequest(req))return json(res,403,{error:'Stop Loop from this PC.'});
         json(res,200,{stopping:true});

@@ -80,7 +80,7 @@ export default async function handler(req, res) {
       if (!await redis(['EXISTS', `${namespace()}:space:${hash(accessKey)}`])) throw new APIError(410, 'That shared space expired.');
       return reply(res, 200, { key: accessKey });
     }
-    if (!['sync', 'connection', 'remove-device'].includes(route)) throw new APIError(404, 'Not available in the hosted app.');
+    if (!['sync', 'connection', 'remove-device', 'rename-device'].includes(route)) throw new APIError(404, 'Not available in the hosted app.');
     const key = (req.headers.authorization || '').replace(/^Bearer /, '');
     if (!/^[a-f0-9]{64}$/.test(key)) throw new APIError(401, 'Open an invite link or create a shared space.');
     const dbKey = `${namespace()}:space:${hash(key)}`;
@@ -97,6 +97,16 @@ export default async function handler(req, res) {
         db.devices = db.devices.filter(d => d.id !== body.id);
         db.removedDevices = [...new Set([...(db.removedDevices || []), body.id])];
         if (db.removedDevices.length > 1000) throw new APIError(507, 'Create a new shared space to reset its device history.');
+        return { db, result: { devices: db.devices } };
+      });
+      return reply(res, 200, result);
+    }
+    if (route === 'rename-device') {
+      if (typeof body.id !== 'string' || body.id.length > 100 || typeof body.name !== 'string' || !body.name.trim() || body.name.length > 100) throw new APIError(400, 'Enter a valid device name.');
+      const result = await changeSpace(dbKey, db => {
+        const device = db.devices.find(d => d.id === body.id);
+        if (!device) throw new APIError(404, 'Device not found.');
+        device.name = body.name.trim(); device.updatedAt = Date.now();
         return { db, result: { devices: db.devices } };
       });
       return reply(res, 200, result);
