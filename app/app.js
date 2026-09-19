@@ -733,6 +733,7 @@ function setupHostedUI(){
   section.innerHTML='<div class="space-choice" id="spaceChoice"><button type="button" class="btn btn-primary" id="showHost">Host a space</button><button type="button" class="btn btn-ghost" id="showJoin">Join a space</button></div><div id="hostPanel" hidden><p class="space-label">Share this code</p><output id="spaceCode" class="space-code">----</output><p class="sub">Open Clippy on another device and enter these four digits.</p><div class="hosted-actions"><button type="button" class="btn btn-ghost" id="copyInvite">Copy optional invite link</button><button type="button" class="btn btn-ghost" id="leaveSpace">Leave space</button></div></div><div id="joinPanel" hidden><div class="field"><label for="spaceInvite">Four-digit host code or invite link</label><input id="spaceInvite" inputmode="text" autocomplete="one-time-code" maxlength="1000" placeholder="0000"></div></div><input id="shareInvite" hidden>';
   form.insertBefore(section,form.querySelector('.modal-actions'));
   const confirm=document.getElementById('confirmAddDevice');
+  confirm.hidden=true;
   const showMode=mode=>{document.getElementById('spaceChoice').hidden=mode==='host';document.getElementById('hostPanel').hidden=mode!=='host';document.getElementById('joinPanel').hidden=mode!=='join';confirm.hidden=mode!=='join';document.getElementById('connectFeedback').textContent='';if(mode==='join')document.getElementById('spaceInvite').focus();};
   confirm.textContent='Join space';
   document.getElementById('showHost').onclick=async()=>{
