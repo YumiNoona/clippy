@@ -82,8 +82,8 @@ Vercel Functions do not keep a durable local clipboard file. Hosted storage uses
 ### How to share the hosted app
 
 1. Send people your Vercel homepage URL. They need only a browser.
-2. For your own devices, create a private space and choose **Copy invite**.
-3. Open that invite on another device, or paste it under **Devices → Join with an invite link**.
+2. Create a private space and share the **eight-character host code** or choose **Copy link**.
+3. On another device, open the same Vercel URL, choose **Devices**, and enter the host code or paste the invite link. This works across different Wi-Fi networks and mobile data.
 4. Add a clip. Other open devices pull changes every few seconds.
 
 Creating or joining a space opens a separate clipboard. Existing local clips remain in **Use local clipboard**; they are not silently uploaded. To move a clip into a space, copy it, switch to the space, and paste it there.
@@ -110,9 +110,9 @@ npm --prefix app ci
 
 Double-click **Open Loop.vbs**. Look for the green Loop dot beside the Windows clock; double-click the dot to open the full app. **Ctrl+Alt+V** opens the quick clipboard panel. Right-click the tray to pause auto capture, start/stop the server, or open help.
 
-Connect phones/tablets to the same Wi-Fi or hotspot, then use **Devices → Pair a phone or tablet** on the PC. Scan the QR code. Run **`app/Enable Wi-Fi.cmd`** once if Windows Firewall prevents connection; it may request administrator access. Run **`app/Enable Startup.cmd`** to start the tray after Windows sign-in.
+For local PC mode, connect phones/tablets to the same Wi-Fi or hotspot, then use **Devices → Pair a phone or tablet** on the PC and scan the QR code. Run **`app/Enable Wi-Fi.cmd`** once if Windows Firewall prevents connection; it may request administrator access. Local mode cannot cross the public internet. For home/office/mobile-data connections, use the Vercel URL and a hosted shared space instead.
 
-The local PC must be awake during transfers. You can close its browser window. At the office, use the same reachable Wi-Fi or connect the PC to your phone’s hotspot.
+The local PC must be awake during transfers. You can close its browser window. At the office, use the same reachable Wi-Fi or connect the PC to your phone’s hotspot. Hosted spaces do not require the PC to stay on.
 
 For a distributable Windows folder, use **`app/Make office copy.cmd`** after installing dependencies. It creates a ZIP in Downloads without your clips or keys. A Git checkout excludes the bundled `node.exe`; recipients need Node.js installed unless you separately include a properly licensed portable runtime.
 

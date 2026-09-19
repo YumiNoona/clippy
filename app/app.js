@@ -705,6 +705,7 @@ async function persistItems(){
 }
 async function openConnect(){
   if(HOSTED){openHostedConnect();return;}
+  document.getElementById('connectionModeHint').textContent='PC mode works on the same Wi-Fi or phone hotspot. For devices on another network, open your public Vercel Clippy URL and use a shared space.';
   document.getElementById('newDeviceName').value=devices.find(x=>x.id===state.myDeviceId)?.name || '';
   document.getElementById('accessKey').value=accessKey;
   document.getElementById('connectFeedback').textContent=accessKey?'This device is connected.':'';
@@ -715,7 +716,7 @@ async function openConnect(){
     try{
       const response=await fetch('/api/connection',{headers:{Authorization:'Bearer '+accessKey},signal:AbortSignal.timeout(5000)});
       if(response.ok){const info=await response.json();document.getElementById('hostPairing').hidden=!info.canPair;}
-    }catch{document.getElementById('connectFeedback').textContent='PC unreachable. Reconnect to its Wi-Fi or scan a fresh code on the PC.';}
+    }catch{document.getElementById('connectFeedback').textContent='PC unreachable. This mode needs the same Wi-Fi or hotspot; for another network use the public Vercel Clippy URL.';}
   }else document.getElementById('joinCode').focus();
 }
 function setupHostedUI(){
@@ -740,6 +741,7 @@ function setupHostedUI(){
 }
 function openHostedConnect(){
   overlay.classList.add('show');
+  document.getElementById('connectionModeHint').textContent='Cloud mode works across home Wi-Fi, office networks, mobile data, Android, iPhone, tablets, and PCs. Share the host code or invite link.';
   document.getElementById('newDeviceName').value=devices.find(d=>d.id===state.myDeviceId)?.name || '';
   document.getElementById('spaceShare').hidden=!accessKey;document.getElementById('leaveSpace').hidden=!accessKey;
   document.getElementById('shareInvite').value=accessKey?location.origin+'/#key='+accessKey:'';
@@ -821,7 +823,7 @@ document.getElementById('connectForm').onsubmit=async e=>{
     if(code){await redeemPairCode(code);document.getElementById('joinCode').value='';}
     else{
       const entered=document.getElementById('accessKey').value.trim();
-      if(!/^[a-f0-9]{64}$/.test(entered))throw new Error('Enter the six-digit pairing code shown on the PC.');
+      if(!/^[a-f0-9]{64}$/.test(entered))throw new Error('Enter the six-digit code from the PC, or paste an existing access key under Advanced.');
       accessKey=entered;await dbPut('accessKey',accessKey);
     }
     const mine=devices.find(x=>x.id===state.myDeviceId);

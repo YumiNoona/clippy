@@ -98,8 +98,8 @@
 <button class="nav-scrim" id="navScrim" aria-label="Close navigation" hidden></button>
 <div class="overlay" id="addDeviceOverlay" role="dialog" aria-modal="true" aria-labelledby="connectTitle">
   <form class="modal" id="connectForm">
-    <h3 id="connectTitle">Connect over Wi-Fi</h3>
-    <p class="sub">Connect to the same Wi-Fi or phone hotspot. On the PC, generate a QR code and scan it with your phone camera. No internet account is needed.</p>
+    <h3 id="connectTitle">Connect this device</h3>
+    <p class="sub" id="connectionModeHint">PC mode works on the same Wi-Fi or phone hotspot. For devices on another network, open your public Vercel Clippy URL and use a shared space.</p>
     <div class="field"><label for="newDeviceName">This device's name</label><input id="newDeviceName" maxlength="100" autocomplete="off"></div>
     <section id="hostPairing" hidden>
       <button class="btn btn-primary" type="button" id="generatePairCode">Pair a phone or tablet</button>
@@ -107,7 +107,7 @@
     </section>
     <div class="field" id="pairCodeField"><label for="joinCode">Six-digit code from the PC</label><input id="joinCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></div>
     <details id="advancedConnection"><summary>Advanced: use an access key</summary><div class="field"><label for="accessKey">Access key</label><input id="accessKey" type="password" autocomplete="off" placeholder="Optional: existing access key"></div></details>
-    <p class="sub">Keep the PC awake while transferring; its Clippy window can be closed. At the office, a phone hotspot can avoid Wi-Fi that blocks device connections.</p>
+    <p class="sub">Keep the PC awake while transferring; its Clippy window can be closed. A phone hotspot works when office Wi-Fi blocks device-to-device connections.</p>
     <div class="modal-actions"><button class="btn btn-ghost" id="cancelAddDevice" type="button">Close</button><button class="btn btn-primary" id="confirmAddDevice" type="submit">Connect</button></div>
     <p id="connectFeedback" role="status"></p>
   </form>
